@@ -1,0 +1,897 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN"
+           "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<meta name="GENERATOR" content="TtH 3.85">
+<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+ <style type="text/css"> div.p { margin-top: 7pt;}</style>
+ <style type="text/css"><!--
+ td div.comp { margin-top: -0.6ex; margin-bottom: -1ex;}
+ td div.comb { margin-top: -0.6ex; margin-bottom: -.6ex;}
+ td div.hrcomp { line-height: 0.9; margin-top: -0.8ex; margin-bottom: -1ex;}
+ td div.norm {line-height:normal;}
+ span.roman {font-family: serif; font-style: normal; font-weight: normal;} 
+ span.overacc2 {position: relative;  left: .8em; top: -1.2ex;}
+ span.overacc1 {position: relative;  left: .6em; top: -1.2ex;} --></style>
+ 
+  
+<title>No Title</title><body bgcolor="#ffffff">
+
+
+<center><b><font size="+3">Warren's Microcoded CPU</font></b>
+
+<div class="p"><!----></div>
+</center><font size="+3">
+</font> 
+<center>(c) February 2012, GPL3 licence
+
+<div class="p"><!----></div>
+</center>
+<h2>Introduction</h2>
+
+<div class="p"><!----></div>
+I wanted to design a microcoded CPU which had a reasonable number
+of instructions and RAM, but was still reasonably clean and elegant.
+I've used the microcode logic structure that <a href="http://www.mythsim.org/">Mythsim</a>
+uses, but I've designed the CPU from scratch and implemented it using
+<a href="http://ozark.hendrix.edu/~burch/logisim/">Logisim</a>.
+
+<div class="p"><!----></div>
+
+<h3>Download</h3>
+
+<div class="p"><!----></div>
+Here is a Zip file which contains the microcoded CPU as a Logisim
+circuit, a microassembler and an assembler written in Perl, a text
+file containing a minimal set of microinstructions, and a sample assembly
+language file:
+
+<ul>
+<li> <a href="http://minnie.tuhs.org/Programs/UcodeCPU/microcode_cpu.zip">microcode_cpu.zip</a>,
+version 1.1
+<div class="p"><!----></div>
+</li>
+</ul>
+All files are copyright Warren Toomey and distributed under the GPL3
+licence. I would recommend that you read through the details of the
+CPU and the assemblers before loading the CPU into Logisim.
+
+<div class="p"><!----></div>
+
+<h2>CPU Overview</h2>
+
+<div class="p"><!----></div>
+The CPU has a 16-bit address bus and a 16-bit data bus. With Logisim,
+you can only address the 16-bit words as words not bytes. This also
+means that you only need to add 1 to the PC to move to the next whole-word
+instruction, not 2. There are 8 general purpose 16-bit registers,
+an ALU which can do 8 different operations, an instruction register
+and an immediate register to hold immediate (literal) values.
+
+<div class="p"><!----></div>
+Each simple instruction is 1-word (16 bits) long with these fields:
+
+<ul>
+<li> 7-bit opcode (MSBs)
+<div class="p"><!----></div>
+</li>
+
+<li> 3-bit t-register (usually the 2nd operand to the ALU)
+<div class="p"><!----></div>
+</li>
+
+<li> 3-bit s-register (the 1st operand to the ALU)
+<div class="p"><!----></div>
+</li>
+
+<li> 3-bit d-register (LSBs, usually the destination of the ALU operation)
+<div class="p"><!----></div>
+</li>
+</ul>
+Extended instructions are two words long where the first word has
+the same format as above and is followed by a 16-bit immediate/literal
+value.
+
+<div class="p"><!----></div>
+
+<h2>The Main Datapaths</h2>
+
+<div class="p"><!----></div>
+ 
+<center><img src="Figs/main.png" alt="Figs/main.png" />
+
+<div class="p"><!----></div>
+</center>The RAM unit holds 2<sup>16</sup>words of 16-bits each. The address bus
+coming in on the left of the RAM unit is controlled by the multiplexer
+above it, and the PC connects into this multiplexer. The data bus
+coming out of the RAM unit connects to the immediate register (Immed),
+the instruction register (IR), and a multiplexer which feeds into
+the register file (Regs).
+
+<div class="p"><!----></div>
+Two of the outputs from the register file head towards the ALU, but
+there is another multiplexer which can choose the second operand to
+the ALU. The ALU's output can be placed onto the data bus or back
+into the register file.
+
+<div class="p"><!----></div>
+Let's look at the components of the CPU.
+
+<div class="p"><!----></div>
+
+<h3>The ALU</h3>
+
+<div class="p"><!----></div>
+ 
+<center><img src="Figs/alui.png" alt="Figs/alui.png" />
+
+<div class="p"><!----></div>
+</center>The ALU takes two 16-bit data inputs and produces a 16-bit data output
+as well as zero, negative and carry flags. The <em>aluop</em> control
+line specifies which of the 16 available operations to perform. One
+of the data inputs comes from the s-register; the other from either
+the t-register, the immediate register, constant 0 or constant 1 depending
+on the value of the <em>op2sel</em> control line. The ALU output goes
+to several places: it can be written out on the data bus, used as
+an address, or it can be written back into the register file.
+
+<div class="p"><!----></div>
+The immediate input into the ALU allows us to do ALU operations such
+as register + immediate value. The constant 1 input allows us to do
+operations such as register = register + 1, i.e. increment register.
+But why the constant 0 value? This allows for comparisons against
+zero, e.g. such instructions as branch if register is equal to zero.
+
+<div class="p"><!----></div>
+ 
+<center><img src="Figs/alu.png" alt="Figs/alu.png" />
+
+<div class="p"><!----></div>
+</center>Internally, the ALU is implemented using the built-in Logisim maths
+and logic units. The 16 available operations which feed into the multiplexer
+at the bottom are: add, sub, mul, div, remainder, and, or, xor, nand,
+nor, not, logical shift left, logical shift right, arithmetic shift
+right, rotate left and rotate right.
+
+<div class="p"><!----></div>
+The top multiplexer outputs the carry result but only from the add
+and subtract units; it is zero for all other operations. The negative
+output is simply the most significant bit of the result. The zero
+output is calculated by ORing all the result bits together and inverting:
+if all bits are zero, the 16-bit OR is zero and the inversion is true.
+
+<div class="p"><!----></div>
+
+<h3>The Register File</h3>
+
+<div class="p"><!----></div>
+ 
+<center><img src="Figs/regfilei.png" alt="Figs/regfilei.png" />
+
+<div class="p"><!----></div>
+</center>The register file contains eight 16-bit general purpose registers.
+The <em>dsel</em>, <em>ssel</em> and <em>tsel</em> control lines select
+which of the eight registers become the d-register, s-register and
+t-register. The d-register is generally used as the destination register
+for ALU operations. The s- and t-registers are used as ALU sources.
+
+<div class="p"><!----></div>
+The ALU outputs all three registers on the right, but only the s-
+and t-registers go into the ALU. The d-register output is used elsewhere.
+
+<div class="p"><!----></div>
+The <em>regval</em> input to the ALU is written to a register when one
+of the <em>dwrite</em>, <em>swrite</em> or <em>twrite</em> lines and enabled.
+This does mean that the same input could be written to multiple registers
+at the same time, but in practice only one write line is ever enabled
+at any time.
+
+<div class="p"><!----></div>
+The source of <em>regval</em> is determined by the multiplexer and is
+controlled by the <em>regsrc</em> line. The options are: from the data
+bus, from the immediate register, from the ALU output, or from the
+s-register.
+
+<div class="p"><!----></div>
+ 
+<center><img src="Figs/regfile.png" alt="Figs/regfile.png" />
+
+<div class="p"><!----></div>
+</center>Internally, the <em>regval</em> value is sent to all eight registers,
+but their enable lines are controlled by the three demultiplexers
+at the bottom-left. On each demultiplexer, when the <em>write</em> line
+is enabled, the <em>sel</em> value causes the <em>write</em> to be delivered
+to the appropriate register.
+
+<div class="p"><!----></div>
+On the right, three multiplexers take all register outputs and use
+the <em>sel</em> values to determine which register to output on the
+<em>dreg</em>, <em>sreg</em> and <em>treg</em> outputs.
+
+<div class="p"><!----></div>
+Finally, on the right, all eight register values are output so that
+we can attach probes to the register file in the main circuit and
+see their values.
+
+<div class="p"><!----></div>
+
+<h3>The Immediate Register</h3>
+
+<div class="p"><!----></div>
+ 
+<center><img src="Figs/imregi.png" alt="Figs/imregi.png" />
+
+<div class="p"><!----></div>
+</center>The 16-bit immediate register isn't visible to the programmer. It
+typically holds the immediate second word from the 2-word instructions.
+It is loaded from the data bus when the <em>imload</em> control line
+is enabled.
+
+<div class="p"><!----></div>
+
+<h3>The Instruction Register</h3>
+
+<div class="p"><!----></div>
+ 
+<center><img src="Figs/irlogici.png" alt="Figs/irlogici.png" />
+
+<div class="p"><!----></div>
+</center>The 16-bit IR is loaded from the data bus when the <em>irload</em> control
+line is enabled. It just splits out the 16-bits into the 7-bit <em>opcode</em>
+and 3-bit <em>dsel</em>,<em> ssel </em>&amp;<em> tsel</em> control lines.
+
+<div class="p"><!----></div>
+ 
+<center><img src="Figs/irlogic.png" alt="Figs/irlogic.png" />
+
+<div class="p"><!----></div>
+</center>Internally, it is a single register with a bit-splitter on the right.
+
+<div class="p"><!----></div>
+
+<h3>The Program Counter</h3>
+
+<div class="p"><!----></div>
+ 
+<center><img src="Figs/pclogici.png" alt="Figs/pclogici.png" />
+
+<div class="p"><!----></div>
+</center>The PC is a 16-bit register which is loaded when the <em>pcload</em>
+control line is enabled. Its new value is controlled by the <em>pcsel</em>
+control line, and allows these inputs:
+
+<ul>
+<li> PC+1, i.e. increment the PC
+<div class="p"><!----></div>
+</li>
+
+<li> immediate register, used to jump the PC to an absolute address
+<div class="p"><!----></div>
+</li>
+
+<li> PC+immediate, used to branch forwards or backwards relative to the
+current PC
+<div class="p"><!----></div>
+</li>
+
+<li> s-register, used to return from a function back to the calling function
+<div class="p"><!----></div>
+</li>
+</ul>
+There's also a <em>reset</em> line which I use to quickly restart program
+execution at address 0.
+
+<div class="p"><!----></div>
+ 
+<center><img src="Figs/pclogic.png" alt="Figs/pclogic.png" />
+
+<div class="p"><!----></div>
+</center>Internally, you can see that the PC's new value is chosen by a multiplexer
+which receives PC+1 using an adder, the immediate register, PC+immediate
+with another adder, and the s-register value.
+
+<div class="p"><!----></div>
+
+<h3>The Data Bus</h3>
+
+<div class="p"><!----></div>
+ 
+<center><img src="Figs/databusi.png" alt="Figs/databusi.png" />
+
+<div class="p"><!----></div>
+</center>Data normally flows from RAM onto the 16-bit data bus; this goes into
+the immediate register, the IR, and into the multiplexer before the
+register file.
+
+<div class="p"><!----></div>
+However, when the <em>datawrite</em> control line is enabled, it allows
+writes out to RAM. There is a controlled buffer which lets the data
+out onto the bus from the CPU. The multiplexer controlled by the <em>datasel</em>
+line chooses what to write on the data bus: the PC's current value,
+the d-register, the t-register or the ALU output.
+
+<div class="p"><!----></div>
+The PC value is used when we are doing a jump to subroutine, so that
+its old value is saved to memory before the jump. We use the d-register
+value when doing instructions like store word Rd, address. At present,
+the other two inputs (<em>treg</em> and <em>aluout</em>) are unused, so
+we could lose one <em>datasel</em> bit and make it a 2-way multiplexer.
+
+<div class="p"><!----></div>
+One thing to note is that the ALU output can be s-register+0, so we
+can write the s-register out on the data bus using <em>aluout</em>.
+
+<div class="p"><!----></div>
+
+<h3>The Address Bus</h3>
+
+<div class="p"><!----></div>
+ 
+<center><img src="Figs/addrbusi.png" alt="Figs/addrbusi.png" />
+
+<div class="p"><!----></div>
+</center>The 16-bit address bus gets its value from one of four inputs controlled
+by the <em>addrsel</em> control line: the PC, the immediate register,
+the ALU output or the s-register. This allows such addressing modes
+as:
+
+<ul>
+<li> PC: fetch the next instruction
+<div class="p"><!----></div>
+</li>
+
+<li> immediate: fetch from a fixed memory location
+<div class="p"><!----></div>
+</li>
+
+<li> ALU: fetch from immediate+s-register, i.e. indexed addressing, and
+fetch from s-register+t-register
+<div class="p"><!----></div>
+</li>
+
+<li> s-register: indirect addressing where the s-register holds a pointer
+<div class="p"><!----></div>
+</li>
+</ul>
+
+<div class="p"><!----></div>
+
+<h2>The Microcode Logic</h2>
+
+<div class="p"><!----></div>
+We've now seen the main components of the CPU and the datapaths. Each
+of the components is controlled by one or more control lines. It's
+now time to turn our attention to the microcode logic which outputs
+the values for these control lines.
+
+<div class="p"><!----></div>
+Each machine-code instruction is interpreted by the microcode logic
+as several microinstructions. Each microinstruction enables certain
+control lines which do things as update a register's value, command
+the ALU to perform a certain operation, fetch a value from memory
+etc. After each microinstruction, the microcode logic has to determine
+which next microinstruction to perform.
+
+<div class="p"><!----></div>
+ 
+<center><img src="Figs/ucodelogici.png" alt="Figs/ucodelogici.png" />
+
+<div class="p"><!----></div>
+</center>The microcode unit takes as inputs the current <em>opcode</em> and the
+<em>n</em>, <em>v</em> and <em>c</em> ALU outputs. It then outputs all the
+control lines which control the components and busses: <em>aluop</em>,
+<em>op2sel</em>, <em>datawrite</em>, <em>addrsel</em>, <em>pcsel</em>, <em>pcload</em>,
+<em>dwrite</em>, <em>irload</em>, <em>imload</em>, <em>regsrc,</em> <em>datasel
+</em>and<em> swrite</em>.
+
+<div class="p"><!----></div>
+ 
+<center><img src="Figs/ucodelogic.png" alt="Figs/ucodelogic.png" />
+
+<div class="p"><!----></div>
+</center>Internally, the microcode logic is implemented using two ROMs and
+a counter. Each ROM has 256 rows where each row stores a single microinstruction.
+This is known as horizontal microcode.
+
+<div class="p"><!----></div>
+The control ROM is 32-bits wide, and on each row the bits enable or
+disable all the CPU control lines for this microinstruction. That's
+why there is the big bit splitter which splits the 32-bit ROM output
+into the various control lines. At present, only 23 out of the 32
+bits are used.
+
+<div class="p"><!----></div>
+After each microinstruction, the microcontroller needs to know which
+next microinstruction to perform. The decision rom is 16-bits wide,
+and each row is two 8-bit fields:
+
+<ul>
+<li> a row number to jump to if the microinstruction is "true"
+<div class="p"><!----></div>
+</li>
+
+<li> a row number to jump to if the microinstruction is "false"
+<div class="p"><!----></div>
+</li>
+</ul>
+If both are the same value, this is effectively a jump always command,
+so the values 5, 5 would cause the current microinstruction to jump
+to row 5 and do that microinstruction next. For high-level instructions
+which are composed of several microinstructions, this is used to move
+to the next microinstruction in the sequence.
+
+<div class="p"><!----></div>
+The microinstruction at row 0 is the one that fetches the instruction
+into the IR, so the last microinstruction in any high-level instruction
+will have 0,0 as the jump values.
+
+<div class="p"><!----></div>
+There is a 4-way multiplexer controlled by the <em>cond</em> line. This
+uses the ALU flags to decide what to do, and is used on branch instructions.
+For example, to do a high-level instruction such as <tt>BEQ Rs,
+Rt, immed</tt>, we would first use the ALU to do Rs - Rt. If the ALU
+zero flag was true, then the s- and t-register values are equal. In
+the control ROM we would set <em>cond</em>=0 to select the <em>z</em>
+flag. This would choose the "true" row number to jump to if
+<em>z</em> is true, otherwise it would jump to the false row. In this
+way, we would be able to set (or not set) the PC to the immediate
+value based on the zero flag from the ALU.
+
+<div class="p"><!----></div>
+One thing left to explain is the multiplexer controlled by the <em>indexsel</em>
+line. Normally we want to jump to a specific next row in the ROMs.
+For example, here is the microassembly code to fetch an instruction
+into the IR:
+
+<pre>
+&nbsp;&nbsp;fetch:&nbsp;&nbsp;addrsel=pc&nbsp;irload=1&nbsp;&nbsp;#&nbsp;Get&nbsp;the&nbsp;data&nbsp;from&nbsp;the&nbsp;address&nbsp;in&nbsp;the&nbsp;PC,&nbsp;load&nbsp;the&nbsp;IR&nbsp;[&nbsp;row&nbsp;0&nbsp;]
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;pcload=1&nbsp;&nbsp;pcsel=pc&nbsp;&nbsp;&nbsp;#&nbsp;Increment&nbsp;the&nbsp;PC&nbsp;by&nbsp;1&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[&nbsp;row&nbsp;1&nbsp;]
+
+</pre>
+At this point we want to jump to a microinstruction row based on the
+value of the opcode, not to a single specific row number. Here, we
+enable the <em>indexsel</em> line, and use values 2, 2 for the true/false
+jump rows. With the indexsel line enabled, the adder now adds 2 +
+<em>opcode</em> to get the row number. So if we are doing opcode 10,
+the next row would be 12. This implies that rows 2+0 up to 2+127 contain
+the first microinstruction for the high-level instructions with opcodes
+0 to 127.
+
+<div class="p"><!----></div>
+It also means that, for high-level instructions which are composed
+of several microinstructions, they cannot simply go to the next microinstruction
+after the first one as that belongs to a different high-level instructions.
+Instead, the rows after 2+127 are used to hold the rest of the microinstruction
+sequence for each high-level instruction, and the last one in each
+sequence jumps to 0, 0.
+
+<div class="p"><!----></div>
+For more details on how this (horizontal) microcode works, have a
+look at <a href="http://www.mythsim.org/">Mythsim</a> which is where I
+borrowed the idea.
+
+<div class="p"><!----></div>
+
+<h2>The CPU as a Logisim Circuit</h2>
+
+<div class="p"><!----></div>
+If you now unpack the Zip file at the top of this page, you will find
+the CPU as a Logisim circuit. When you load it into Logisim, you need
+to do three things:
+
+<ol type="1">
+<li> Load the control ROM with an image.
+<div class="p"><!----></div>
+</li>
+
+<li> Load the decision ROM with an image.
+<div class="p"><!----></div>
+</li>
+
+<li> Load the RAM with a program image to run.
+<div class="p"><!----></div>
+</li>
+</ol>
+The output from my microassembler below is two ROM images, <tt>ucontrol.rom</tt>
+and <tt>udecision.rom</tt>, which you can load into the simulated
+CPU ROMs in the <em>ucodelogic</em> component. The output from my assembler
+below is a RAM image (ending with the suffix <em>.ram</em>) which you
+can load into the simulated CPU RAM in the main circuit.
+
+<div class="p"><!----></div>
+If you reset the simulation in Logisim, the ROMs are kept intact but
+the RAM is wiped, so you need to reload it. Of course, if you make
+any changes to the microcode with the microassembler, you need to
+reload the ROM images, too.
+
+<div class="p"><!----></div>
+
+<h3>Example Programs</h3>
+
+<div class="p"><!----></div>
+The Zip file comes with a text file, <tt>basic_microcode</tt>, which
+contains the microcode that implements just a few machine instructions.
+There is also a text file, <tt>basic_program.s</tt>, which is an
+assembly program that uses these instructions to add the numbers from
+1 up to 100 and store the result at address 256 (i.e. address 0x100).
+
+<div class="p"><!----></div>
+To assemble the file <tt>basic_microcode</tt> into the two ROM files
+<tt>ucontrol.rom</tt> and <tt>udecision.rom</tt>, do this command
+at the command-line:
+
+<pre>
+&nbsp;&nbsp;&nbsp;&nbsp;$&nbsp;./uassem&nbsp;basic_microcode
+
+</pre>
+To assemble the program <tt>basic_program.s</tt> into the RAM image
+file <tt>basic_program.ram</tt>, do this command at the command-line:
+
+<pre>
+&nbsp;&nbsp;&nbsp;&nbsp;$&nbsp;./massem&nbsp;basic_program.s
+
+</pre>
+You can now load the ROM and RAM file into the ROM and RAM chips inside
+Logisim, and start the clock ticking to run the program. You should
+see register R1 decrement, and the register R0 accumulate the running
+sum. If you set the clock ticks to a frequency of 32Hz it makes things
+go fast enough, but stop the ticks when R1 gets close to 1. Then manually
+step the ticks until you see the instruction at address <em>0x0a</em>
+which stores the result of <em>0x13ba</em> into address <em>0x100</em>.
+
+<div class="p"><!----></div>
+
+<h3>Your Challenge</h3>
+
+<div class="p"><!----></div>
+As with Mythsim, most of the machine-code instructions have not been
+implemented in microcode. I've done this on purpose so that you get
+the challenge of implementing them yourself. Read through the text
+file <tt>list_of_instructions</tt> which describes the set of instructions
+that the assembler knows about, and exactly what each instruction
+has to achieve.
+
+<div class="p"><!----></div>
+Your task is to implement at least these instructions, and any other
+instructions that you would like the CPU to perform. To do this, you
+need to learn the syntax of the microcode assembly language.
+
+<div class="p"><!----></div>
+
+<h2>The Microcode Assembler and Its Assembly Language</h2>
+
+<div class="p"><!----></div>
+I have quickly written two Perl programs, <tt>uassem</tt> and <tt>massem</tt>.
+Both are fragile and proof of concept, and they both need refactoring
+or rewriting from scratch! However, they will suffice for now. The
+<tt>uassem</tt> program is the microcode assembler. Here is the syntax
+of the input that it expects.
+
+<div class="p"><!----></div>
+The input file (the single argument on the command line) is a text
+file. Blank lines are ignored. Any text after a hash (#) symbol is
+ignored. The program's output is the two ROM images, <tt>ucontrol.rom</tt>
+and <tt>udecision.rom.</tt>
+
+<div class="p"><!----></div>
+Lines can start with a text label followed by a colon, or a decimal
+number followed by a colon. Microcode instructions can jump to text
+labels as their next instruction. Numeric labels indicate the first
+microinstruction for the machine-code instruction with that opcode
+number.
+
+<div class="p"><!----></div>
+After the optional label, each line is divided into two sections separated
+by a comma. The first section lists the control lines which are enabled
+by the microinstruction. The second section describes the decision
+as to how to find the next microinstruction to execute.
+
+<div class="p"><!----></div>
+The first section is a space-separated list of <em>control-line=value</em>
+commands. Read through the <tt>uassem</tt> file and at the top you
+will see the available <em>control-line=value</em> commands. If you
+do not name a control line, then it will have the default value of
+0.
+
+<div class="p"><!----></div>
+The second section determines the next microcode instruction. The
+available commands here are:
+
+<ul>
+<li> empty, i.e. no comma, no command. Execution continues with the next
+microinstruction in the file.
+<div class="p"><!----></div>
+</li>
+
+<li> <em>goto label</em>. Continue execution with the microinstruction that
+has the given label.
+<div class="p"><!----></div>
+</li>
+
+<li> <em>if value then label1 else label2</em>. If the value (<em>z</em>, <em>n</em>,
+<em>c</em> or <em>norz</em>) is true, then continue with the microinstruction
+at <em>label1</em>, otherwise continue with the microinstruction at
+<em>label2</em>.
+<div class="p"><!----></div>
+</li>
+
+<li> <em>if value then label1</em>. If the value (<em>z</em>, <em>n</em>, <em>c</em>
+or <em>norz</em>) is true, then continue with the microinstruction at
+<em>label1</em>, otherwise continue with the next microinstruction.
+<div class="p"><!----></div>
+</li>
+
+<li> <em>opcode_jump</em>. This command must only be used once in the input
+file. It tells the microcode controller to jump to the first microinstruction
+to execute the instruction with the given opcode in the instruction
+register.
+<div class="p"><!----></div>
+</li>
+</ul>
+
+<div class="p"><!----></div>
+
+<h3>Example Microcode</h3>
+
+<div class="p"><!----></div>
+Let's have a look at the existing <tt>basic_microcode</tt> file to
+see what it does.
+
+<pre>
+#&nbsp;A&nbsp;small&nbsp;set&nbsp;of&nbsp;microinstructions&nbsp;for&nbsp;the&nbsp;CPU
+#&nbsp;(c)&nbsp;GPL3&nbsp;Warren&nbsp;Toomey,&nbsp;2012
+#
+
+fetch:&nbsp;&nbsp;&nbsp;&nbsp;addrsel=pc&nbsp;irload=1
+	&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;pcload=1&nbsp;&nbsp;pcsel=pc,&nbsp;opcode_jump
+#
+#&nbsp;ALU&nbsp;operations&nbsp;on&nbsp;Rd,Rs,Rt
+0:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;aluop=add&nbsp;&nbsp;op2sel=treg&nbsp;&nbsp;dwrite=1&nbsp;&nbsp;regsrc=aluout,&nbsp;goto&nbsp;fetch
+
+#
+#&nbsp;Jump&nbsp;compared&nbsp;to&nbsp;zero&nbsp;operations
+#
+#&nbsp;JNEZ&nbsp;Rs,immed
+40:&nbsp;&nbsp;&nbsp;&nbsp;addrsel=pc&nbsp;&nbsp;imload=1
+	&nbsp;&nbsp;&nbsp;aluop=sub&nbsp;&nbsp;op2sel=0,&nbsp;if&nbsp;z&nbsp;then&nbsp;pcincr&nbsp;else&nbsp;jump
+
+#
+#&nbsp;Load&nbsp;immediate&nbsp;Rd,&nbsp;immed
+63:&nbsp;&nbsp;&nbsp;&nbsp;addrsel=pc&nbsp;&nbsp;dwrite=1&nbsp;&nbsp;regsrc=databus
+	&nbsp;&nbsp;&nbsp;pcload=1&nbsp;&nbsp;pcsel=pc,&nbsp;goto&nbsp;fetch
+#
+
+#
+#&nbsp;Store&nbsp;Rd&nbsp;into&nbsp;address&nbsp;from&nbsp;immed
+65:&nbsp;&nbsp;&nbsp;&nbsp;addrsel=pc&nbsp;&nbsp;imload=1
+	&nbsp;&nbsp;&nbsp;addrsel=immed&nbsp;&nbsp;datawrite=1&nbsp;&nbsp;datasel=dreg
+	&nbsp;&nbsp;&nbsp;pcload=1&nbsp;&nbsp;pcsel=pc,&nbsp;goto&nbsp;fetch
+
+#
+#&nbsp;Other&nbsp;code&nbsp;which&nbsp;we&nbsp;call
+pcincr:&nbsp;&nbsp;&nbsp;&nbsp;pcload=1&nbsp;&nbsp;pcsel=pc,&nbsp;goto&nbsp;fetch
+jump:	&nbsp;&nbsp;pcload=1&nbsp;&nbsp;pcsel=immed,&nbsp;goto&nbsp;fetch
+
+</pre>
+The <em>fetch</em> code reads in the instruction in memory that the
+PC points to, increments the PC by 1 and then jumps to the microinstruction
+for the instruction's opcode. That's 2 microinstructions done, so
+the first microinstruction for opcode 0 (ADD) is at location 2+0=2.
+
+<div class="p"><!----></div>
+The ADD instruction is implemented as one microinstruction: tell the
+ALU to add, the second operand is the t-reg, write into the d-reg
+using the ALU's output. Finally, go to the <em>fetch</em> microinstruction
+to start the next machine-code instruction. Note that the last instruction
+in the sequence that implements one machine-code instruction should
+go back to <em>fetch</em>.
+
+<div class="p"><!----></div>
+The JNEZ (jump absolute to immed if Rs is not equal to zero) uses
+an immediate value, so this needs to be loaded into the immediate
+register. Then the ALU is commanded to do Rs - 0. If the result is
+zero (they were equal), we go to to <em>pcincr</em>, otherwise to <em>jump</em>.
+<em>pcincr</em> simply increments the PC (to skip over the immediate
+value) and returns to <em>fetch</em> another instruction. <em>jump</em>
+sets the PC to the immediate value (i.e. an absolute jump) and returns
+to <em>fetch</em> another instruction.
+
+<div class="p"><!----></div>
+The LI (load Rd with an immediate value) doesn't load the immediate
+value into the immediate register. We have already incremented the
+PC so it points at the memory location where the immediate value is.
+Therefore, the microcode at row 63 loads the d-register straight off
+the data bus, using the PC as the address. Then we increment the PC
+(to skip over the immediate value) and return to <em>fetch</em> another
+instruction.
+
+<div class="p"><!----></div>
+The SW (store word from Rd into memory at location pointed by immediate)
+also uses an immediate value. The microcode on row 65 loads the immediate
+register. The next microinstruction uses the immediate value as an
+address, and writes the d-register to memory. Finally, we increment
+the PC (to skip over the immediate value) and return to <em>fetch</em>
+another instruction.
+
+<div class="p"><!----></div>
+
+<h3>Optimisations</h3>
+
+<div class="p"><!----></div>
+There are several ways to optimise the total number of microinstructions,
+and the number of microinstructions per single machine-code instruction.
+
+<div class="p"><!----></div>
+The first thing to note is that the main components of the CPU (register
+file, ALU, PC, multiplexers etc.) are somewhat independent, so a single
+microinstruction can send control line values out to several components
+in parallel. You can get a lot done with a single microinstruction.
+However, watch the registers. If you save a value into a register,
+then it isn't visible until the next microinstruction.
+
+<div class="p"><!----></div>
+The second thing to note is that, if the last one or more microinstructions
+are common to several machine-code instructions, then you can give
+them a label and place them after the opcode microinstructions. Then
+simply go to this set of microinstructions at the end of all of the
+opcode microinstructions. In effect, you are creating a sort-of subroutine
+or macro which is common to several machine-code instructions. Unfortunately,
+you can only do this for the microinstructions at the end of a sequence,
+not at the beginning or in the middle.
+
+<div class="p"><!----></div>
+Finally, think laterally. The LI (load Rd with an immediate value)
+instruction above is an example where we could avoid a microinstruction
+by not loading the immediate register. The fact that the ALU can get
+constant 0 and constant 1 inputs (and its value can be accessed in
+several places) can be convenient.
+
+<div class="p"><!----></div>
+
+<h2>The High-level Assembler and Assembly Language</h2>
+
+<div class="p"><!----></div>
+The <tt>massem</tt> program is the machine-code assembler. Here is
+the syntax of the input that it expects.
+
+<div class="p"><!----></div>
+The input file (the single argument on the command line) is a text
+file. Make sure it has a dot followed by a suffix. The output is a
+text file with the suffix changed to <em>.ram</em>.
+
+<div class="p"><!----></div>
+Blank lines are ignored. Any text after a hash (#) symbol is ignored.
+
+<div class="p"><!----></div>
+Lines can start with a text label followed by a colon, which defines
+a label that can be absolute jumped to, or relatively jumped to. There
+are no macros or directives as yet. Execution starts at the first
+assembly instruction in the file.
+
+<div class="p"><!----></div>
+After the optional label, there is the instruction name followed by
+a comma-separated list of operands. To make writing the assembler
+easier, every instruction has a unique name and set of operands, even
+if two instructions do the same thing but with different sets of operands.
+
+<div class="p"><!----></div>
+If you read the top of <tt>massem</tt>, you will see the types and
+number of operands each instruction takes. Here's the syntax for each
+one:
+
+<ul>
+<li> <em>d</em>, <em>s</em> and <em>t</em>: This specifies a d-, s- or t-register.
+You can use <em>Rn</em> or <em>rn</em>, where the first letter is `R'
+or `r', and is followed by a digit in the range 0 to 7 inclusive.
+<div class="p"><!----></div>
+</li>
+
+<li> <em>i</em>: This specifies an absolute immediate value. You can use
+either a text label, a decimal value, or a hexadecimal value starting
+with <em>0x</em>. The value will be used in an absolute sense. For jumps,
+this means PC is loaded with this value.
+<div class="p"><!----></div>
+</li>
+
+<li> <em>I</em>: This specifies a relative immediate value. You can use either
+a text label, a decimal value, or a hexadecimal value starting with
+<em>0x</em>. The value will be used in an relative sense. For jumps,
+this means PC is loaded with PC + this value.
+<div class="p"><!----></div>
+</li>
+
+<li> <em>X</em>: This specifies an indexed address. You can use <em>immediate(Rn)</em>
+or <em>Rn(immediate)</em> or <em>(Rn)</em>. If you use an immediate value,
+then it can be a text label, a decimal value, or a hexadecimal value
+starting with <em>0x</em>. The immediate value will be used in an absolute
+sense. If you don't specify an immediate value, the immediate value
+of 0 will be used.
+<div class="p"><!----></div>
+</li>
+
+<li> S: This specifies an indexed address. You can use <em>Rs(Rt)</em> here,
+i.e. the s- and t-registers.
+<div class="p"><!----></div>
+</li>
+</ul>
+
+<div class="p"><!----></div>
+
+<h3>Example Assembly Program</h3>
+
+<div class="p"><!----></div>
+Here is the assembly-language program that comes with the Zip file:
+
+<pre>
+#&nbsp;This&nbsp;program&nbsp;uses&nbsp;the&nbsp;instructions&nbsp;defined&nbsp;in&nbsp;the
+#&nbsp;basic_microcode&nbsp;file.&nbsp;It&nbsp;adds&nbsp;the&nbsp;numbers&nbsp;from&nbsp;100
+#&nbsp;down&nbsp;to&nbsp;1&nbsp;and&nbsp;stores&nbsp;the&nbsp;result&nbsp;in&nbsp;memory&nbsp;location&nbsp;256.
+#&nbsp;(c)&nbsp;GPL3&nbsp;Warren&nbsp;Toomey,&nbsp;2012
+#
+main:	li	r0,&nbsp;0		#&nbsp;r0&nbsp;is&nbsp;the&nbsp;running&nbsp;sum
+	li	r1,&nbsp;100		#&nbsp;r1&nbsp;is&nbsp;the&nbsp;counter
+	li	r2,&nbsp;-1		#&nbsp;Used&nbsp;to&nbsp;decrement&nbsp;r1
+loop:	add	r0,&nbsp;r0,&nbsp;r1	#&nbsp;r0=&nbsp;r0&nbsp;+&nbsp;r1
+	add	r1,&nbsp;r1,&nbsp;r2	#&nbsp;r1--
+	jnez	r1,&nbsp;loop	#&nbsp;loop&nbsp;if&nbsp;r1&nbsp;!=&nbsp;0
+	sw	r0,&nbsp;256		#&nbsp;Save&nbsp;the&nbsp;result	
+
+</pre>
+This uses only the 4 instructions defined in the <tt>basic_microcode</tt>
+file. The massem assembler does recognise more than 70 instructions,
+so if you implement the missing ones yourself you can replace instructions
+like <tt>li r2, -1 </tt>with <tt>dec r2</tt>, for example.
+
+<div class="p"><!----></div>
+
+<h2>Reflections on Building the CPU</h2>
+
+<div class="p"><!----></div>
+Back in 2010 I designed a <a href="http://minnie.tuhs.org/CompArch/Tutes/week03.html">simple CPU with hard-wired logic</a>,
+and I wanted to complement it with the design of a microcoded CPU.
+While I enjoyed doing both, the microcoded CPU was a much easier task
+once I grokked the idea of microcode control.
+
+<div class="p"><!----></div>
+When I did the hardcoded CPU, I really had to spend a lot of time
+designing the datapaths before starting on the control logic. I had
+to rationalise the instruction set and instruction fields so that
+it would require less gates to decode each instruction. There really
+was no freedom to try things out and make design changes. And wiring
+up the gates in the control logic was interesting, to say the least.
+
+<div class="p"><!----></div>
+With the microcoded CPU, I found that there was a lot of design freedom.
+I created a reasonable datapath design and the microcode logic. From
+there I could start writing instructions, and I could do this in any
+order as I wasn't decoding specific opcode bits.
+
+<div class="p"><!----></div>
+I also found that, as I wanted to make an instruction but the existing
+datapath couldn't do it, it was relatively simple to alter the datapath.
+For example, the multiplexer onto the address bus had only 2 inputs
+to start with. I extended this to 4 inputs, and all I had to do was
+change the control line width coming out of the microcode unit. Ditto
+the multiplexer for the ALU second operand. Similarly, I started with
+8 ALU operations and near the end I changed this to 16 operations.
+
+<div class="p"><!----></div>
+Overall, I found building the microcoded CPU a lot easier to do than
+the hardwired CPU, and when I needed to alter my design, it was much
+easier to do this with the microcoded CPU.
+
+<div class="p"><!----></div>
+
+<h2>Bugs, Issues, Comments</h2>
+
+<div class="p"><!----></div>
+I expect the circuit and the assemblers to have some bugs, so if you
+find some bugs, if you have any issues or if you create some machine-code
+instructions which I didn't, you can contact me using this address:
+<em>wtoomey at tuhs dot org</em>.
+
+<br /><br /><hr /><small>File translated from
+T<sub><font size="-1">E</font></sub>X
+by <a href="http://hutchinson.belmont.ma.us/tth/">
+T<sub><font size="-1">T</font></sub>H</a>,
+version 3.85.<br />On 27 Feb 2012, 15:38.</small>
+</body></html>
