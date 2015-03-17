@@ -1,7 +1,16 @@
 Instructions
 --
 
-lines | # | description
+named registers | description
+--- | ---
+$0 | CONST(0)
+$r0-$r7 | Work registers
+$imm | private, refers to the immediate value
+$rd | doc, destination register
+$rs | doc, source register
+$rt | doc, second source register
+
+control lines | # | description
 --- | --- | ---
 ssel | 0 | 0=RF$sval 1=$imm
 tsel | 1 | 0=RV$tval 1=CONST(0)
@@ -17,9 +26,10 @@ pcload | 13 |
 pcop x2 | 14-15 | 0=pc+1 1=pc+addr 2=addr
 write | 16 |
 dsel x2 | 17-18 | 0=$imm, 1=@pc 2=ALU$dval
+timm | 19 | unused
 
-cui# | inst | lines | description
+control instructions | inst | lines | description
 --- | --- | --- | --- 
 00 | fet | fetch=1 pcload=1 | fetch the instruction `@pc`
 01 | ldi | iset=1 pcload=1 | load the data `@pc` in `$imm`
-02 | adi | ssel=1 
+02 | adi ($rd), $rs | `$rd = $rs + $imm`
