@@ -35,10 +35,12 @@ timm | 19 | unused
 
 opcode | control instruction | control lines | control hex | description
 --- | --- | --- | --- | ---
-00 | fet | fetch=1 pcload=1 | 3000 | fetch the instruction `@pc`
-01 | ldi | iset=1 pcload=1 | 2800 | load the data `@pc` in `$imm`
-02 | adi ($rd), $rs | ssel=1 aop=5 fetch=1 pcload=1 dsel=2 dset=1 | 432A1 | `$rd = $rs + $imm`
+00 | _fet | fetch=1 pcload=1 | 3000 | fetch the instruction `@pc`
+01 | _ldi | iset=1 pcload=1 | 2800 | load the data `@pc` in `$imm`
+02 | _adi ($rd), $rs | ssel=1 aop=5 fetch=1 pcload=1 dsel=2 dset=1 | 432A1 | `$rd = $rs + $imm`
+03 | _add ($rd), $rs, $rt | aop=5 fetch=1 pcload=1 dsel=2 dset=1 | 432A0 | `$rd = $rs + $rt`
 
 instruction | control instructions | footprint | description
 --- | --- | --- | ---
-addi ($rd), $rs, imm | ldi; adi($rd), $rs | {type0, type1} | `$rd = $rs + imm`
+addi ($rd), $rs, imm | _ldi; _adi ($rd), $rs | {type0, type1} | `$rd = $rs + imm`
+add ($rd), $rs, $rt | _add ($rd), $rs, $rt | {type1} | `$rd = $rs + $rt`
