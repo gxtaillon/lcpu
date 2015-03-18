@@ -833,7 +833,6 @@ This file is intended to be loaded by Logisim (http://www.cburch.com/logisim/).
     <a name="clabel" val="Control"/>
     <a name="clabelup" val="east"/>
     <a name="clabelfont" val="SansSerif plain 12"/>
-    <wire from="(310,140)" to="(340,140)"/>
     <wire from="(520,340)" to="(690,340)"/>
     <wire from="(550,250)" to="(690,250)"/>
     <wire from="(480,430)" to="(690,430)"/>
@@ -843,18 +842,20 @@ This file is intended to be loaded by Logisim (http://www.cburch.com/logisim/).
     <wire from="(510,370)" to="(690,370)"/>
     <wire from="(640,70)" to="(690,70)"/>
     <wire from="(520,40)" to="(520,340)"/>
+    <wire from="(280,230)" to="(310,230)"/>
     <wire from="(140,30)" to="(160,30)"/>
     <wire from="(450,490)" to="(690,490)"/>
     <wire from="(160,30)" to="(160,50)"/>
     <wire from="(600,40)" to="(600,190)"/>
+    <wire from="(180,80)" to="(200,80)"/>
     <wire from="(630,40)" to="(630,100)"/>
     <wire from="(140,60)" to="(160,60)"/>
     <wire from="(310,20)" to="(310,140)"/>
     <wire from="(310,20)" to="(320,20)"/>
     <wire from="(470,460)" to="(690,460)"/>
     <wire from="(620,130)" to="(690,130)"/>
-    <wire from="(180,80)" to="(220,80)"/>
     <wire from="(510,40)" to="(510,370)"/>
+    <wire from="(310,140)" to="(310,230)"/>
     <wire from="(280,140)" to="(310,140)"/>
     <wire from="(500,400)" to="(690,400)"/>
     <wire from="(120,80)" to="(120,140)"/>
@@ -898,9 +899,7 @@ This file is intended to be loaded by Logisim (http://www.cburch.com/logisim/).
       <a name="output" val="true"/>
       <a name="label" val="tinv"/>
     </comp>
-    <comp lib="0" loc="(220,80)" name="Probe">
-      <a name="facing" val="west"/>
-    </comp>
+    <comp lib="0" loc="(280,230)" name="Probe"/>
     <comp lib="0" loc="(320,20)" name="Splitter">
       <a name="facing" val="south"/>
       <a name="fanout" val="32"/>
@@ -926,6 +925,9 @@ This file is intended to be loaded by Logisim (http://www.cburch.com/logisim/).
       <a name="facing" val="west"/>
       <a name="output" val="true"/>
       <a name="label" val="dset"/>
+    </comp>
+    <comp lib="0" loc="(200,80)" name="Probe">
+      <a name="facing" val="west"/>
     </comp>
     <comp lib="0" loc="(690,100)" name="Pin">
       <a name="facing" val="west"/>
@@ -969,9 +971,6 @@ This file is intended to be loaded by Logisim (http://www.cburch.com/logisim/).
       <a name="bit5" val="0"/>
       <a name="bit6" val="0"/>
       <a name="bit7" val="1"/>
-    </comp>
-    <comp lib="0" loc="(340,140)" name="Probe">
-      <a name="facing" val="west"/>
     </comp>
     <comp lib="0" loc="(690,70)" name="Pin">
       <a name="facing" val="west"/>
