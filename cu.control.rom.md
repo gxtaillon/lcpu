@@ -27,7 +27,7 @@ fset | 10 |
 iset | 11 |
 fetch | 12 |
 pcload | 13 |
-pcop x2 | 14-15 | 0=pc+1 1=pc+addr 2=addr
+pcop x2 | 14-15 | 0=pc+1 1=pc+addr 2=wb 3=@pc
 write | 16 |
 dsel x2 | 17-18 | 0=$imm, 1=@pc 2=ALU$dval
 timm | 19 | unused
@@ -39,7 +39,7 @@ opcode | control instruction | control lines | control hex | description
 02 | _adi ($rd), $rs | ssel=1 aop=5 fetch=1 pcload=1 dsel=2 dset=1 | 432A1 | `$rd = $rs + $imm`
 03 | _add ($rd), $rs, $rt | aop=5 fetch=1 pcload=1 dsel=2 dset=1 | 432A0 | `$rd = $rs + $rt`
 04 | _l ($rd) | pcload=1 dsel=1 dset=1 | 22200 | load the immediate `@pc` in `$rd`
-05 | _ji | dsel=2 fetch=1 pcload=1 pcop=2
+05 | _ji | fetch=1 pcload=1 pcop=2 | B000 | jump to `$imm`
 
 instruction | control instructions | footprint | description
 --- | --- | --- | ---
