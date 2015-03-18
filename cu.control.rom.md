@@ -1,9 +1,10 @@
 Instructions
 --
 
-instruction format | 15-13 | 12-10 | 9-7 | 6-0
---- | --- | --- | --- | --- 
-type 1 | treg | sreg | dreg | opcode
+instruction format | 15-13 | 12-10 | 9-7 | 6-0 | description
+--- | --- | --- | --- | --- | ---
+type 0 |  |  |  |  | immediate
+type 1 | treg | sreg | dreg | opcode | control instructions
 
 named registers | description
 --- | ---
@@ -38,6 +39,6 @@ opcode | control instruction | control lines | control hex | description
 01 | ldi | iset=1 pcload=1 | 2800 | load the data `@pc` in `$imm`
 02 | adi ($rd), $rs | ssel=1 aop=5 fetch=1 pcload=1 dsel=2 dset=1 | 432A1 | `$rd = $rs + $imm`
 
-instruction | description
+instruction | control instructions | description
 --- | ---
-addi ($rd), $rs, imm | `$rd = $rs + imm`
+addi ($rd), $rs, imm | ldi; adi($rd), $rs | `$rd = $rs + imm`
