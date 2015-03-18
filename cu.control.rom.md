@@ -17,7 +17,7 @@ $rt | doc, second source register
 control lines | # | description
 --- | --- | ---
 ssel | 0 | 0=RF$sval 1=$imm
-tsel | 1 | 0=RV$tval 1=CONST(0)
+tsel | 1 | 0=RV$tval 1=@pc
 cin | 2 |
 sinv | 3 |
 tinv | 4 |
@@ -35,13 +35,18 @@ timm | 19 | unused
 opcode | control instruction | control lines | control hex | description
 --- | --- | --- | --- | ---
 00 | _fet | fetch=1 pcload=1 | 3000 | fetch the instruction `@pc`
-01 | _li | iset=1 pcload=1 | 2800 | load the immediate `@pc` in `$imm`
+01 | _li | iset=1 pcload=1 | 2800 | load the immediate `@pc` in `$imm` (see note 1)
 02 | _adi ($rd), $rs | ssel=1 aop=5 fetch=1 pcload=1 dsel=2 dset=1 | 432A1 | `$rd = $rs + $imm`
 03 | _add ($rd), $rs, $rt | aop=5 fetch=1 pcload=1 dsel=2 dset=1 | 432A0 | `$rd = $rs + $rt`
 04 | _l ($rd) | pcload=1 dsel=1 dset=1 | 22200 | load the immediate `@pc` in `$rd`
+05 | _ji | dsel=2 fetch=1 pcload=1
 
 instruction | control instructions | footprint | description
 --- | --- | --- | ---
 addi ($rd), $rs, imm | _li; _adi ($rd), $rs | {type1, type0, type1} | `$rd = $rs + imm`
 add ($rd), $rs, $rt | _add ($rd), $rs, $rt | {type1} | `$rd = $rs + $rt`
 puti ($rd) imm | _l ($rd) | {type1, type0} | `$rd = imm`
+
+Notes
+--
+1. Instructions using an immediate could have an additionnal variant that use `@pc` directly with `tsel=1 fetch=0` and a footprint of `{type1, type0}` instead of using an additionnal instruction to load the immediate in the immediate register. However, if multiple consecutive instructions use the same immediate, storing it in the immediate register would reduce the memory footprint of the program.
