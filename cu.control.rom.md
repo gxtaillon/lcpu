@@ -1,11 +1,15 @@
 Instructions
 --
 
+instruction format | 15-13 | 12-10 | 9-7 | 6-0
+--- | --- | --- | --- | --- 
+type 1 | dreg | sreg | treg | opcode
+
 named registers | description
 --- | ---
 $0 | constant value 0
 $r0-$r7 | Work registers
-$imm | private, immediate register
+$imm | hidden, immediate register
 $rd | doc, destination register
 $rs | doc, source register
 $rt | doc, second source register
