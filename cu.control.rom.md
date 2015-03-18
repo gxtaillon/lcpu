@@ -32,4 +32,4 @@ control instructions | inst | lines | hex | description
 --- | --- | --- | --- | ---
 00 | fet | fetch=1 pcload=1 | 3000 | fetch the instruction `@pc`
 01 | ldi | iset=1 pcload=1 | 2800 | load the data `@pc` in `$imm`
-02 | adi ($rd), $rs | ssel=1 aop=5 fetch=1 pcload=1 | 30A1 | `$rd = $rs + $imm`
+02 | adi ($rd), $rs | ssel=1 aop=5 fetch=1 pcload=1 dsel=2 dset=1 | 432A1 | `$rd = $rs + $imm`
