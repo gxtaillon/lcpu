@@ -32,7 +32,7 @@ write | 16 |
 dsel x2 | 17-18 | 0=$imm, 1=@pc 2=ALU$dval
 timm | 19 | unused
 
-control instructions | inst | lines | hex | description
+opcode | instruction | control lines | control hex | description
 --- | --- | --- | --- | ---
 00 | fet | fetch=1 pcload=1 | 3000 | fetch the instruction `@pc`
 01 | ldi | iset=1 pcload=1 | 2800 | load the data `@pc` in `$imm`
