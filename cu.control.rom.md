@@ -8,7 +8,6 @@ type 1 | treg | sreg | dreg | opcode | control instructions
 
 named registers | description
 --- | ---
-$0 | constant value 0
 $r0-$r7 | Work registers
 $imm | hidden, immediate register
 $rd | doc, destination register
@@ -36,11 +35,13 @@ timm | 19 | unused
 opcode | control instruction | control lines | control hex | description
 --- | --- | --- | --- | ---
 00 | _fet | fetch=1 pcload=1 | 3000 | fetch the instruction `@pc`
-01 | _ldi | iset=1 pcload=1 | 2800 | load the data `@pc` in `$imm`
+01 | _li | iset=1 pcload=1 | 2800 | load the immediate `@pc` in `$imm`
 02 | _adi ($rd), $rs | ssel=1 aop=5 fetch=1 pcload=1 dsel=2 dset=1 | 432A1 | `$rd = $rs + $imm`
 03 | _add ($rd), $rs, $rt | aop=5 fetch=1 pcload=1 dsel=2 dset=1 | 432A0 | `$rd = $rs + $rt`
+04 | _l ($rd) | fetch=1 pcload=1 dsel=1 dset=1 | 23182 | load the immediate `@pc` in `$rd`
 
 instruction | control instructions | footprint | description
 --- | --- | --- | ---
-addi ($rd), $rs, imm | _ldi; _adi ($rd), $rs | {type0, type1} | `$rd = $rs + imm`
+addi ($rd), $rs, imm | _li; _adi ($rd), $rs | {type1, type0, type1} | `$rd = $rs + imm`
 add ($rd), $rs, $rt | _add ($rd), $rs, $rt | {type1} | `$rd = $rs + $rt`
+puti ($rd) imm | _l ($rd) | {type1, type0} | `$rd = imm`
