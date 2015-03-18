@@ -39,7 +39,7 @@ opcode | control instruction | control lines | control hex | description
 02 | _adi ($rd), $rs | ssel=1 aop=5 fetch=1 pcload=1 dsel=2 dset=1 | 432A1 | `$rd = $rs + $imm`
 03 | _add ($rd), $rs, $rt | aop=5 fetch=1 pcload=1 dsel=2 dset=1 | 432A0 | `$rd = $rs + $rt`
 04 | _l ($rd) | pcload=1 dsel=1 dset=1 | 22200 | load the immediate `@pc` in `$rd`
-05 | _ji | dsel=2 fetch=1 pcload=1
+05 | _ji | dsel=2 fetch=1 pcload=1 pcop=2
 
 instruction | control instructions | footprint | description
 --- | --- | --- | ---
@@ -49,4 +49,4 @@ puti ($rd) imm | _l ($rd) | {type1, type0} | `$rd = imm`
 
 Notes
 --
-1. Instructions using an immediate could have an additionnal variant that use `@pc` directly with `tsel=1 fetch=0` and a footprint of `{type1, type0}` instead of using an additionnal instruction to load the immediate in the immediate register. However, if multiple consecutive instructions use the same immediate, storing it in the immediate register would reduce the memory footprint of the program.
+1. Instructions using an immediate could have an additionnal variant that use `@pc` directly with `tsel=1 fetch=0` and a footprint of `{type1, type0}` instead of using an additionnal instruction to load the immediate in the immediate register. However, if multiple consecutive instructions were to use the same immediate, storing it in the immediate register would reduce the memory footprint of the program.
