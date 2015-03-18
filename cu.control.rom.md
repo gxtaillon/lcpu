@@ -34,7 +34,7 @@ timm | 19 | unused
 
 opcode | control instruction | control lines | control hex | description
 --- | --- | --- | --- | ---
-00 | _fet | fetch=1 pcload=1 | 3000 | fetch the instruction `@pc`
+00 | _nop | fetch=1 pcload=1 | 3000 | do nothing
 01 | _li | iset=1 pcload=1 | 2800 | load the immediate `@pc` in `$imm` (see note 1)
 02 | _adi ($rd), $rs | ssel=1 aop=5 fetch=1 pcload=1 dsel=2 dset=1 | 432A1 | `$rd = $rs + $imm`
 03 | _add ($rd), $rs, $rt | aop=5 fetch=1 pcload=1 dsel=2 dset=1 | 432A0 | `$rd = $rs + $rt`
