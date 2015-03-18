@@ -3,7 +3,7 @@ Instructions
 
 instruction format | 15-13 | 12-10 | 9-7 | 6-0
 --- | --- | --- | --- | --- 
-type 1 | dreg | sreg | treg | opcode
+type 1 | treg | sreg | dreg | opcode
 
 named registers | description
 --- | ---
@@ -32,8 +32,12 @@ write | 16 |
 dsel x2 | 17-18 | 0=$imm, 1=@pc 2=ALU$dval
 timm | 19 | unused
 
-opcode | instruction | control lines | control hex | description
+opcode | control instruction | control lines | control hex | description
 --- | --- | --- | --- | ---
 00 | fet | fetch=1 pcload=1 | 3000 | fetch the instruction `@pc`
 01 | ldi | iset=1 pcload=1 | 2800 | load the data `@pc` in `$imm`
 02 | adi ($rd), $rs | ssel=1 aop=5 fetch=1 pcload=1 dsel=2 dset=1 | 432A1 | `$rd = $rs + $imm`
+
+instruction | description
+--- | ---
+addi ($rd), $rs, imm | `$rd = $rs + imm`
