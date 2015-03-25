@@ -1,38 +1,76 @@
 import Data.Int (Int8)
 import Data.Text (Text)
 
+{-
+    All `size`s indicate width in bits of said field.
+-}
+
 data Register = Register
-    { name :: Text
+    { registerName :: Text
+    , registerSize :: Int8
     } deriving (Show)
 
 data ControlLine = ControlLine 
-    { name :: Text
-    , size :: Int8
+    { controlLineName :: Text
+    , controlLineSize :: Int8
     } deriving (Show)
 
-data InstructionFormatRegister = 
+data InstructionFormatPattern = 
     InstructionFormatRegister
-    { registerPatterns :: [(Register, Int8)] -- Register, Index
-    , highPatterns :: [Int8] -- ones index
-    , controlPattern :: Int8
-    -- rest is filled with zeros
-    } deriving (Show)
-data InstructionFormatImmediate
-    { value :: Int
-    , index :: Int8
-    , size :: Int8
+    { instructionFormatRegisterName :: Register
+    }
+  | InstructionFormatHigh
+  | InstructionFormatImmediate
+    { instructionFormatImmediateValue :: Int
+    , instructionFormatImmediateSize :: Int8
     } deriving (Show)
 
 data InstructionFormat = InstructionFormat
-    { name :: Text
-    , 
+    { instructionFormatName :: Text
+    -- [(Pattern, Index)]
+    , instructionFormatPatterns :: [(InstructionFormatPattern, Int8)] 
+    } deriving (Show)
 
-data Program = Program 
-    { format :: Text
-    , regSize :: Int8
-    , regs :: [Register]
-    , lineSize :: Int8
-    , lines :: [ControlLine]
-    , instFormatSize :: Int8
-    , 
+data ControlInstruction = ControlInstruction
+    { controlInstructionName :: Text
+    , controlInstructionFormat :: InstructionFormat
+    -- [(Line, Value)]
+    , controlInstructionLines :: [(ControlLine, Int)] 
+    } deriving (Show)
+    
+data ControlStatement = ControlStatement
+    { controlStatementName :: Text
+    , controlStatementFormat :: InstructionFormat
+    } deriving (Show)
+
+data InstructionPattern = InstructionPattern
+    { instructionPatternRequiresParentheses :: Bool
+    , instructionPatternFormatPattern :: InstructionFormatPattern
+    } deriving (Show)
+
+data Instruction = Instruction
+    { instructionName :: Text
+    , instructionPatterns :: [InstructionPattern]
+    , instructionControlInstructions :: [ControlInstruction]
+    } deriving (Show)
+    
+data ASM = ASM
+    { asmFormat :: Text
+    , asmRegisterSize :: Int8
+    , asmRegisters :: [Register]
+    , asmLineSize :: Int8
+    , asmLines :: [ControlLine]
+    , asmInstSize :: Int8
+    , asmInstFormats :: [InstructionFormat]
+    , asmControlSize :: Int8
+    , asmControlInstructions :: [ControlInstruction]
+    , asmControlStatements :: [ControlStatement]
+    , asmInstructions :: [Instruction]
+    } deriving (Show)
+
+data Program = Program
+    { programAsm :: ASM
+    , programImage :: [Int]
+    , programRomImage :: [Int]
+    } deriving (Show)
 
