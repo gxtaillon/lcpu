@@ -1,0 +1,58 @@
+.format "v2.0 raw"
+
+.regsize 3
+
+.reg r0 : 16
+.reg r1 : 16
+.reg r2 : 16
+.reg r3 : 16
+.reg r4 : 16
+.reg r5 : 16
+.reg r6 : 16
+.reg r7 : 16
+
+.linesize 32
+
+.line ssel 
+.line tsel
+.line cin
+.line sinv
+.line tinv
+.line aop : 4
+.line dset
+.line fset
+.line iset
+.line fetch
+.line pcload
+.line pcop : 2
+.line write 
+.line dsel : 2
+.line timm
+
+.instsize 16
+
+.instformat type0 : @imm
+.instformat type1 : 000 000 000 @ctrl
+.instformat type2 : 000 000 $rd @ctrl
+.instformat type3 : 000 $rs $rd @ctrl
+.instformat type4 : $rt $rs $rd @ctrl
+
+.ctrlsize 7
+
+.ctrlasm *        : type0
+.ctrlrom nop      : type1       : fetch=1 pcload=1
+.ctrlrom li       : type1       : iset=1 pcload=1
+.ctrlrom addi     : type3       : ssel=1 aop=5 fetch=1 pcload=1 dsel=1 dset=1
+.ctrlrom add      : type4       : aop=5 fetch=1 pcload=1 dsel=2 dset=1
+.ctrlrom l        : type2       : pcload=1 dsel=1 dset=1
+.ctrlrom ji       : type1       : fetch=1 pcload=1 pcop=2
+                                
+.inst nop                       : nop
+.inst lx   imm                  : li; *
+.inst addi ($rd), $rs           : addi
+.inst addx ($rd), $rs, imm      : li; *; addi
+.inst add  ($rd), $rs, $rt      : add
+.inst putx imm                  : l; *
+.inst jx   imm                  : li; *; ji
+.inst ji                        : ji
+

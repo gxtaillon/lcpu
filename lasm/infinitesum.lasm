@@ -1,0 +1,9 @@
+.include "lcpu.rom.lasm"
+
+.program
+main:
+    putx ($r0), 0x0001
+    putx ($r1), 0x0001
+loop:
+    add  ($r0), $r0, $r1
+    jx   loop
