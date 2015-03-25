@@ -29,7 +29,7 @@
 .line dsel : 2
 .line timm
 
-.instformatsize 16
+.instsize 16
 
 .instformat type0 : @imm
 .instformat type1 : 000 000 000 @ctrl
